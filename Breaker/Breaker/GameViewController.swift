@@ -89,6 +89,11 @@ class GameViewController: UIViewController {
   }
   
   func setupSounds() {
+    game.loadSound(name: "Paddle", fileNamed: "Breaker.scnassets/Sounds/Paddle.wav")
+    game.loadSound(name: "Block0", fileNamed: "Breaker.scnassets/Sounds/Block0.wav")
+    game.loadSound(name: "Block1", fileNamed: "Breaker.scnassets/Sounds/Block1.wav")
+    game.loadSound(name: "Block2", fileNamed: "Breaker.scnassets/Sounds/Block2.wav")
+    game.loadSound(name: "Barrier", fileNamed: "Breaker.scnassets/Sounds/Barrier.wav")
   }
   
   override var shouldAutorotate: Bool { return true }
@@ -96,7 +101,8 @@ class GameViewController: UIViewController {
   override var prefersStatusBarHidden: Bool { return true }
   
   // 1
-  override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+  override func viewWillTransition(to size: CGSize, with coordinator:
+    UIViewControllerTransitionCoordinator) {
     // 2
     let deviceOrientation = UIDevice.current.orientation
     switch(deviceOrientation) {
@@ -114,7 +120,7 @@ class GameViewController: UIViewController {
       paddleX = paddleNode.position.x
     }
   }
-  
+
   override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
     for touch in touches {
       // 1
@@ -166,15 +172,17 @@ extension GameViewController: SCNPhysicsContactDelegate {
           game.reset()
         }
       }
+      game.playSound(node: scnScene.rootNode, name: "Barrier")
     }
     // 2
     if contactNode.physicsBody?.categoryBitMask == ColliderType.brick.rawValue {
       game.score += 1
       contactNode.isHidden = true
-      contactNode.runAction(SCNAction.waitForDurationThenRunBlock(duration: 120) {
-        (node:SCNNode!) -> Void in
+      contactNode.runAction(
+        SCNAction.waitForDurationThenRunBlock(duration: 120) { (node:SCNNode!) -> Void in
           node.isHidden = false
         })
+      game.playSound(node: scnScene.rootNode, name: "Block\(arc4random() % 3)")
     }
     // 3
     if contactNode.physicsBody?.categoryBitMask == ColliderType.paddle.rawValue {
@@ -184,6 +192,7 @@ extension GameViewController: SCNPhysicsContactDelegate {
       if contactNode.name == "Right" {
         ballNode.physicsBody!.velocity.xzAngle += (convertToRadians(angle: 20))
       }
+      game.playSound(node: scnScene.rootNode, name: "Paddle")
     }
     // 4
     ballNode.physicsBody?.velocity.length = 5.0

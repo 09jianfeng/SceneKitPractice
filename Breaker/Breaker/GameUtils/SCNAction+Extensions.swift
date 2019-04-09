@@ -36,7 +36,6 @@ extension SCNAction {
   class func waitForDurationThenRemoveFromParent(duration: TimeInterval) -> SCNAction {
     let wait = SCNAction.wait(duration: duration)
     let remove = SCNAction.removeFromParentNode()
-  
     return SCNAction.sequence([wait,remove])
   }
   

@@ -58,6 +58,7 @@ class GameViewController: UIViewController {
     scnView.autoenablesDefaultLighting = true
     
     scnView.delegate = self
+    // sceneView在没有动画的时候会进入暂停状态，设置isPlaying来阻止
     scnView.isPlaying = true
   }
   
@@ -68,7 +69,7 @@ class GameViewController: UIViewController {
   }
   
   func setupCamera() {
-    // 1
+    // 1 设置摄像机位置
     cameraNode = SCNNode()
     // 2
     cameraNode.camera = SCNCamera()
@@ -103,7 +104,7 @@ class GameViewController: UIViewController {
     let color = UIColor.random()
     geometry.materials.first?.diffuse.contents = color
     
-    // 4
+    // 4 设置物体属性dynamic
     let geometryNode = SCNNode(geometry: geometry)
     geometryNode.physicsBody = SCNPhysicsBody(type: .dynamic, shape: nil)
     
@@ -112,9 +113,9 @@ class GameViewController: UIViewController {
     let randomY = Float.random(min: 10, max: 18)
     // 2
     let force = SCNVector3(x: randomX, y: randomY , z: 0)
-    // 3
+    // 3 力的作用偏离中心，这样物体就会旋转。
     let position = SCNVector3(x: 0.05, y: 0.05, z: 0.05)
-    // 4
+    // 4 添加力，动量
     geometryNode.physicsBody?.applyForce(force, at: position, asImpulse: true)
     
     let trailEmitter = createTrail(color: color, geometry: geometry)
@@ -131,7 +132,7 @@ class GameViewController: UIViewController {
   }
   
   func cleanScene() {
-    // 1
+    // 1 SCNScene 的 rootNode 的 childNodes
     for node in scnScene.rootNode.childNodes {
       // 2
       if node.presentation.position.y < -2 {
@@ -141,18 +142,19 @@ class GameViewController: UIViewController {
     }
   }
   
-  // 1
+  // 1 Trail.scnp 这个粒子素材，可以在xcode中自己创建
   func createTrail(color: UIColor, geometry: SCNGeometry) -> SCNParticleSystem {
     // 2
     let trail = SCNParticleSystem(named: "Trail.scnp", inDirectory: nil)!
     // 3
     trail.particleColor = color
-    // 4
+    // 4 粒子发射形状
     trail.emitterShape = geometry
     // 5
     return trail
   }
   
+    //游戏提示
   func setupHUD() {
     game.hudNode.position = SCNVector3(x: 0.0, y: 10.0, z: 0.0)
     scnScene.rootNode.addChildNode(game.hudNode)
@@ -166,6 +168,8 @@ class GameViewController: UIViewController {
       node.removeFromParentNode()
     } else if node.name == "BAD" {
       game.lives -= 1
+        
+        //object 的位置以及旋转信息
       createExplosion(geometry: node.geometry!, position: node.presentation.position,
         rotation: node.presentation.rotation)
       node.removeFromParentNode()
@@ -181,12 +185,12 @@ class GameViewController: UIViewController {
     let hitResults = scnView.hitTest(location, options: nil)
     // 4
     if let result = hitResults.first {
-      // 5
+      // 5 hitTest捕获的节点
       handleTouchFor(node: result.node)
     }
   }
   
-  // 1
+  // 1 爆炸效果
   func createExplosion(geometry: SCNGeometry, position: SCNVector3,
     rotation: SCNVector4) {
       // 2
@@ -208,7 +212,7 @@ class GameViewController: UIViewController {
   }
 }
 
-// 1
+// 1 Render Loop渲染循环
 extension GameViewController: SCNSceneRendererDelegate {
   // 2
   func renderer(_ renderer: SCNSceneRenderer, updateAtTime time:
@@ -216,9 +220,11 @@ extension GameViewController: SCNSceneRendererDelegate {
       // 1
       if time > spawnTime {
         spawnShape()
-        // 2
+        // 2 随机时间
         spawnTime = time + TimeInterval(Float.random(min: 0.2, max: 1.5))
       }
+    
+    //检查移出视野的object
       cleanScene()
       game.updateHUD()
   }

@@ -36,6 +36,7 @@ class GameViewController: UIViewController {
   var scnView:SCNView!
   var scnScene:SCNScene!
   
+    //掩码，用于碰撞检测，设置跟谁碰撞。设置自己的碰撞属性
   let CollisionCategoryBall = 1
   let CollisionCategoryStone = 2
   let CollisionCategoryPillar = 4
@@ -78,11 +79,12 @@ class GameViewController: UIViewController {
     ballNode = scnScene.rootNode.childNode(withName: "ball", recursively: true)!
     ballNode.physicsBody?.contactTestBitMask = CollisionCategoryPillar | CollisionCategoryCrate | CollisionCategoryPearl
     
-    // 1
+    // 1 拿到相机节点
     cameraNode = scnScene.rootNode.childNode(withName: "camera", recursively: true)!
-    // 2
+    // 2 添加lookAt约束,让相机始终朝向ballNode小球节点
     let constraint = SCNLookAtConstraint(target: ballNode)
     cameraNode.constraints = [constraint]
+    //万向节锁
     constraint.isGimbalLockEnabled = true
     
     // 1
@@ -163,27 +165,28 @@ class GameViewController: UIViewController {
   }
   
   func updateMotionControl() {
-    // 1
+    // 1.每0.1秒更新传感器参数,构造为向量
     if game.state == GameStateType.playing {
       motion.getAccelerometerData(interval: 0.1) { (x,y,z) in
         self.motionForce = SCNVector3(x: Float(x) * 0.05, y:0, z: Float(y+0.8) * -0.05)
       }
-      // 2
+      // 2 小球的速度改变, 速度矢量
       ballNode.physicsBody!.velocity += motionForce
     }
   }
   
+    //让相机跟着小球平滑移动
   func updateCameraAndLights() {
-    // 1
+    // 1.小球呈现位置与相机当前位置的差,每次移动0.01
     let lerpX = (ballNode.presentation.position.x - cameraFollowNode.position.x) * 0.01
     let lerpY = (ballNode.presentation.position.y - cameraFollowNode.position.y) * 0.01
     let lerpZ = (ballNode.presentation.position.z - cameraFollowNode.position.z) * 0.01
     cameraFollowNode.position.x += lerpX
     cameraFollowNode.position.y += lerpY
     cameraFollowNode.position.z += lerpZ
-    // 2
+    // 2.灯光位置也跟随相机位置变化
     lightFollowNode.position = cameraFollowNode.position
-    // 3
+    // 3.进入暂停状态时,相机欧拉角沿y轴旋转0.005
     if game.state == GameStateType.tapToPlay {
       cameraFollowNode.eulerAngles.y += 0.005
     }

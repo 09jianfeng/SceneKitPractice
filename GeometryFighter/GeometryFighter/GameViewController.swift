@@ -1,32 +1,24 @@
-/**
- * Copyright (c) 2017 Razeware LLC
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * Notwithstanding the foregoing, you may not use, copy, modify, merge, publish,
- * distribute, sublicense, create a derivative work, and/or sell copies of the
- * Software in any work that is designed, intended, or marketed for pedagogical or
- * instructional purposes related to programming, coding, application development,
- * or information technology.  Permission for such use, copying, modification,
- * merger, publication, distribution, sublicensing, creation of derivative works,
- * or sale is expressly withheld.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+/*
+* Copyright (c) 2016 Razeware LLC
+*
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files (the "Software"), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
+*
+* The above copyright notice and this permission notice shall be included in
+* all copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+* THE SOFTWARE.
+*/
 
 import UIKit
 import SceneKit
@@ -64,7 +56,7 @@ class GameViewController: UIViewController {
     scnView.allowsCameraControl = false
     // 3
     scnView.autoenablesDefaultLighting = true
-
+    
     scnView.delegate = self
     scnView.isPlaying = true
   }
@@ -72,7 +64,7 @@ class GameViewController: UIViewController {
   func setupScene() {
     scnScene = SCNScene()
     scnView.scene = scnScene
-    scnScene.background.contents = "GeometryFighter.scnassets/Textures/Background_Diffuse.jpg"
+    scnScene.background.contents = "GeometryFighter.scnassets/Textures/Background_Diffuse.png"
   }
   
   func setupCamera() {
@@ -169,9 +161,13 @@ class GameViewController: UIViewController {
   func handleTouchFor(node: SCNNode) {
     if node.name == "GOOD" {
       game.score += 1
+      createExplosion(geometry: node.geometry!, position: node.presentation.position,
+        rotation: node.presentation.rotation)
       node.removeFromParentNode()
     } else if node.name == "BAD" {
       game.lives -= 1
+      createExplosion(geometry: node.geometry!, position: node.presentation.position,
+        rotation: node.presentation.rotation)
       node.removeFromParentNode()
     }
   }
@@ -190,21 +186,40 @@ class GameViewController: UIViewController {
     }
   }
   
+  // 1
+  func createExplosion(geometry: SCNGeometry, position: SCNVector3,
+    rotation: SCNVector4) {
+      // 2
+      let explosion =
+      SCNParticleSystem(named: "Explode.scnp", inDirectory:
+        nil)!
+      explosion.emitterShape = geometry
+      explosion.birthLocation = .surface
+      // 3
+      let rotationMatrix =
+      SCNMatrix4MakeRotation(rotation.w, rotation.x,
+        rotation.y, rotation.z)
+      let translationMatrix =
+      SCNMatrix4MakeTranslation(position.x, position.y, position.z)
+      let transformMatrix =
+      SCNMatrix4Mult(rotationMatrix, translationMatrix)
+      // 4
+      scnScene.addParticleSystem(explosion, transform: transformMatrix)
+  }
 }
 
 // 1
 extension GameViewController: SCNSceneRendererDelegate {
   // 2
   func renderer(_ renderer: SCNSceneRenderer, updateAtTime time:
-  TimeInterval) {
-    // 1
-    if time > spawnTime {
-      spawnShape()
-      // 2
-      spawnTime = time + TimeInterval(Float.random(min: 0.2, max: 1.5))
-    }
-    cleanScene()
-    game.updateHUD()
+    TimeInterval) {
+      // 1
+      if time > spawnTime {
+        spawnShape()
+        // 2
+        spawnTime = time + TimeInterval(Float.random(min: 0.2, max: 1.5))
+      }
+      cleanScene()
+      game.updateHUD()
   }
-
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2016 Razeware LLC
+ * Copyright (c) 2017 Razeware LLC
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -10,6 +10,14 @@
  *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
+ *
+ * Notwithstanding the foregoing, you may not use, copy, modify, merge, publish,
+ * distribute, sublicense, create a derivative work, and/or sell copies of the
+ * Software in any work that is designed, intended, or marketed for pedagogical or
+ * instructional purposes related to programming, coding, application development,
+ * or information technology.  Permission for such use, copying, modification,
+ * merger, publication, distribution, sublicensing, creation of derivative works,
+ * or sale is expressly withheld.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -70,7 +78,6 @@ class ViewController: UIViewController {
     setupScenes()
     setupNodes()
     setupActions()
-    setupTraffic()
     setupGestures()
     setupSounds()
     game.state = .tapToPlay
@@ -81,6 +88,23 @@ class ViewController: UIViewController {
     self.view.addSubview(scnView)
     
     gameScene = SCNScene(named: "/MrPig.scnassets/GameScene.scn")
+    
+    // Bugfix
+    let trees = gameScene.rootNode.childNode(withName: "Trees", recursively: false)
+    for treeNode in trees!.childNodes {
+      treeNode.physicsBody = SCNPhysicsBody(type: .static, shape: nil)
+      treeNode.physicsBody?.collisionBitMask = -1
+      treeNode.physicsBody?.categoryBitMask = 4
+    }
+    
+    // Bugfix: Moved "Home Reference" under new parent node called "Home" for this to work
+    let home = gameScene.rootNode.childNode(withName: "Home", recursively: false)
+    for homeNode in home!.childNodes {
+      homeNode.physicsBody = SCNPhysicsBody(type: .static, shape: nil)
+      homeNode.physicsBody?.collisionBitMask = -1
+      homeNode.physicsBody?.categoryBitMask = 4
+    }
+    
     splashScene = SCNScene(named: "/MrPig.scnassets/SplashScene.scn")
     scnView.scene = splashScene
     scnView.delegate = self
@@ -159,6 +183,12 @@ class ViewController: UIViewController {
       }
     }
   }
+    
+  func stopTraffic() {
+    for node in trafficNode.childNodes {
+      node.removeAllActions()
+    }
+  }
   
   func setupGestures() {
     let swipeRight = UISwipeGestureRecognizer(target: self, action: #selector(ViewController.handleGesture(_:)))
@@ -178,7 +208,7 @@ class ViewController: UIViewController {
     scnView.addGestureRecognizer(swipeBackward)
   }
 
-  func handleGesture(_ sender: UISwipeGestureRecognizer) {
+  @objc func handleGesture(_ sender: UISwipeGestureRecognizer) {
     guard game.state == .playing else {
       return
     }
@@ -253,6 +283,8 @@ class ViewController: UIViewController {
   }
   
   func startGame() {
+    resetCoins()
+    setupTraffic()
     splashScene.isPaused = true
     let transition = SKTransition.doorsOpenVertical(withDuration: 1.0)
     scnView.present(gameScene, with: transition, incomingPointOfView: nil, completionHandler: {
@@ -263,9 +295,20 @@ class ViewController: UIViewController {
   }
   
   func stopGame() {
+    stopTraffic()
     game.state = .gameOver
     game.reset()
     pigNode.runAction(triggerGameOver)
+  }
+    
+  func resetCoins() {
+    let coinsNode = gameScene.rootNode.childNode(
+      withName: "Coins", recursively: true)!
+    for node in coinsNode.childNodes {
+      for child in node.childNodes {
+        child.isHidden = false
+      }
+    }
   }
   
   func updatePositions() {
